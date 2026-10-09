@@ -88,7 +88,7 @@
     </div>
   </div>
   <section class="message" id="message" aria-live="polite">
-    <div class="big">HAPPIEST<br>BIRTHDAY TO KHATARNAK KHILVA! 🎂</div>
+    <div class="big">HAPPIEST<br>BIRTHDAY TO! 🎂</div>
     <p>May your day contain an unreasonable amount of happiness… and an even more unreasonable amount of Waah Rii Duniyaa🤨(i meant the good side only).</p>
     <button class="restart" id="restart" type="button">Again. Because obviously.</button>
   </section>
@@ -105,9 +105,9 @@
   const flash = document.getElementById('flash');
   const homeLayer = document.getElementById('homeLayer');
   const rocketScene = document.getElementById('rocketScene');
-  const homeSprite = 'home_emoji.webp';
+  const homeSprite = './home_emoji.webp';
   const sprite = new Image();
-  sprite.src = 'emoji_sprite.png';
+  sprite.src = './emoji_sprite.png';
 
   // The uploaded animation is arranged as a 10 x 11 sprite sheet.
   const COLS = 10, ROWS = 11, FRAME_W = 210, FRAME_H = 208, FRAME_COUNT = 102;
@@ -168,6 +168,9 @@
       const t=(age-e.grow-e.hold)/e.fade; scale=1-t; e.alpha=1-t;
     }
     const size=e.size*scale;
+    // Mobile browsers may take longer to decode the sprite. Keep the timeline
+    // running, but don't call drawImage until the image is actually available.
+    if(!sprite.complete || !sprite.naturalWidth) return;
     const frame=Math.floor((age/1000)*e.frameSpeed+e.frameOffset)%FRAME_COUNT;
     const sx=(frame%COLS)*FRAME_W, sy=Math.floor(frame/COLS)*FRAME_H;
     ctx.save();
@@ -322,7 +325,11 @@
     if(!started) start();
   });
   restart.addEventListener('click', reset);
+  // Start the animation loop immediately. Do not make the whole experience
+  // depend on the sprite image's load event (which can be delayed on mobile).
+  if(!raf) raf=requestAnimationFrame(animate);
   sprite.addEventListener('load', ()=>{ if(!raf) raf=requestAnimationFrame(animate); });
+  sprite.addEventListener('error', ()=>{ console.error('Could not load ./emoji_sprite.png'); });
   if(reduceMotion){
     // Accessible fallback: a few static pops around the sphere, then the message.
     sphere.addEventListener('click',()=>{
